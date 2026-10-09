@@ -1,0 +1,37 @@
+{
+  "crisis_contacts": [
+    {
+      "country": "India",
+      "name": "Tele-MANAS (Government of India)",
+      "number": "14416 / 1800-891-4416",
+      "available": "24/7 Toll Free",
+      "website": "https://telemanas.mohfw.gov.in"
+    },
+    {
+      "country": "India",
+      "name": "KIRAN Mental Health Rehabilitation",
+      "number": "1800-599-0019",
+      "available": "24/7 Toll Free",
+      "website": "https://depwd.gov.in"
+    },
+    {
+      "country": "India",
+      "name": "Vandrevala Foundation Helpline",
+      "number": "+91 9999 666 555",
+      "available": "24/7",
+      "website": "https://www.vandrevalafoundation.com"
+    },
+    {
+      "country": "Global",
+      "name": "International Crisis & Suicide Prevention Hub",
+      "number": "988 (USA/Canada) / 111 (UK)",
+      "available": "24/7",
+      "website": "https://findahelpline.com"
+    }
+  ],
+  "counsellor_escalation_protocol": {
+    "enabled": true,
+    "require_consent": true,
+    "message": "We noticed you are experiencing high stress or severe distress. Would you like us to notify your college counsellor or emergency contact for support?"
+  }
+}

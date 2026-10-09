@@ -1,0 +1,347 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Award, HeartPulse, BookOpen, Brain, Video, FileText, 
+  ArrowRight, Zap, LogIn, UserCheck, RefreshCw, CheckCircle2 
+} from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import api from '../services/api';
+
+import BurnoutEarlyWarningCard from './BurnoutEarlyWarningCard';
+import JobMarketPulseCard from './JobMarketPulseCard';
+import MindfulGamificationCard from './MindfulGamificationCard';
+
+export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpenAuth }) {
+  const [loading, setLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState({
+    readiness: {
+      readiness_score: 82.5,
+      placement_tier: "Placement Ready (Tier 1)",
+      shap_feature_importance: {
+        "Skill Mastery": 8.5,
+        "Mock Interview": 7.5,
+        "Resume Quality": 4.0,
+        "Study Consistency": 6.5,
+        "Project Capstone": 4.5
+      },
+      top_improvement_area: "Resume Quality"
+    },
+    roadmapProgress: {
+      hasActiveRoadmap: true,
+      skill: user?.targetRole || "Software Development",
+      completedTopics: 3,
+      totalTopics: 7,
+      progressPct: 43
+    },
+    assessmentHistory: [
+      { date: 'Mon', wbi: 20 },
+      { date: 'Tue', wbi: 35 },
+      { date: 'Wed', wbi: 22 },
+      { date: 'Thu', wbi: 55 },
+      { date: 'Fri', wbi: 25 },
+      { date: 'Sat', wbi: 15 },
+      { date: 'Sun', wbi: 24 }
+    ]
+  });
+
+  useEffect(() => {
+    fetchDashboardSummary();
+  }, [user]);
+
+  const fetchDashboardSummary = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/dashboard/summary');
+      if (res.data) {
+        setDashboardData(prev => ({
+          ...prev,
+          readiness: res.data.readiness || prev.readiness,
+          roadmapProgress: res.data.roadmapProgress || prev.roadmapProgress,
+          assessmentHistory: (res.data.checkins && res.data.checkins.length > 0)
+            ? res.data.checkins.map((c, i) => ({ date: `Check ${i+1}`, wbi: c.wellbeing_analysis?.wbi_score || 25 }))
+            : prev.assessmentHistory
+        }));
+      }
+    } catch (err) {
+      console.error('Error loading dynamic dashboard summary:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const readiness = dashboardData.readiness;
+  const progress = dashboardData.roadmapProgress;
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Welcome & Profile Summary Header */}
+      <div className="bg-gradient-to-r from-slate-800 via-sky-950 to-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+          <Brain className="h-64 w-64 text-sky-400" />
+        </div>
+        <div className="max-w-3xl space-y-3 relative z-10">
+          <div className="flex items-center space-x-2">
+            <span className="inline-flex items-center space-x-1 bg-sky-500/10 border border-sky-500/30 text-sky-400 px-3 py-1 rounded-full text-xs font-semibold">
+              <Zap className="h-3.5 w-3.5" />
+              <span>EdTech + HealthTech AI Platform</span>
+            </span>
+            {user ? (
+              <span className="inline-flex items-center space-x-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-1 rounded-full text-xs font-semibold capitalize">
+                <UserCheck className="h-3.5 w-3.5" />
+                <span>{user.role} Account ({user.name})</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center space-x-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2.5 py-1 rounded-full text-xs font-semibold">
+                <span>Guest Preview Mode</span>
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+              Welcome back, {user ? user.name : 'Student'}!
+            </h1>
+            <button 
+              onClick={fetchDashboardSummary} 
+              className="text-slate-400 hover:text-white text-xs font-medium flex items-center space-x-1"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh Metrics</span>
+            </button>
+          </div>
+
+          <p className="text-slate-300 text-sm leading-relaxed">
+            Your career readiness pipeline is dynamically active for <strong className="text-sky-300">{user?.targetRole || 'Software Development'}</strong>. CourseConnect balances your technical upskilling with real-time mental health tracking so you land placements without burnout.
+          </p>
+
+          {!user && (
+            <div className="pt-2">
+              <button 
+                onClick={onOpenAuth}
+                className="bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center space-x-2 shadow-lg"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Log In or Create Account for One-Click Demo</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Active Roadmap Progress Banner */}
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <div>
+            <span className="text-[10px] text-sky-400 uppercase font-bold tracking-wider block">Active Skill Roadmap</span>
+            <h3 className="text-base font-bold text-white">{progress.skill}</h3>
+            <span className="text-xs text-slate-400">{progress.completedTopics} of {progress.totalTopics} topics completed</span>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4 w-full sm:w-auto">
+          <div className="w-36 bg-slate-700 rounded-full h-2.5 overflow-hidden">
+            <div 
+              className="bg-sky-400 h-full rounded-full transition-all duration-500" 
+              style={{ width: `${progress.progressPct}%` }}
+            ></div>
+          </div>
+          <span className="text-xs font-mono font-bold text-white w-10">{progress.progressPct}%</span>
+          <button 
+            onClick={() => setActiveTab('roadmap')}
+            className="bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center space-x-1"
+          >
+            <span>Continue</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Primary Metrics Row: Placement Readiness & Wellbeing Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Placement Readiness Score Gauge & SHAP Explainability */}
+        <div className="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Award className="h-5 w-5 text-sky-400" />
+              <h2 className="text-lg font-bold text-slate-100">Placement Readiness</h2>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+              {readiness.placement_tier}
+            </span>
+          </div>
+
+          <div className="flex items-baseline space-x-3">
+            <span className="text-4xl font-extrabold text-white tracking-tight">
+              {readiness.readiness_score}
+            </span>
+            <span className="text-slate-400 text-sm font-semibold">/ 100</span>
+          </div>
+
+          <div className="w-full bg-slate-700/60 rounded-full h-3 overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-sky-500 to-indigo-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${readiness.readiness_score}%` }}
+            ></div>
+          </div>
+
+          <div className="space-y-2.5 pt-2 border-t border-slate-700/60">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+              <span>SHAP Feature Attribution Breakdown</span>
+              <span className="text-sky-400 font-normal">XGBoost ML Model</span>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(readiness.shap_feature_importance).map(([feature, val]) => (
+                <div key={feature} className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">{feature}</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-sky-400 h-full rounded-full" style={{ width: `${Math.min(100, val * 8)}%` }}></div>
+                    </div>
+                    <span className="text-slate-200 font-mono w-8 text-right">+{val}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Mental Health Trend Chart (Recharts) */}
+        <div className="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <HeartPulse className="h-5 w-5 text-emerald-400 animate-pulse" />
+                <h2 className="text-lg font-bold text-slate-100">Mental Wellbeing Trend</h2>
+              </div>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
+                wbiBand === 'Red' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
+                wbiBand === 'Amber' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' :
+                'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+              }`}>
+                {wbiBand} Safety Band
+              </span>
+            </div>
+
+            <div className="h-44 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dashboardData.assessmentHistory}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} />
+                  <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 100]} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '11px' }} 
+                  />
+                  <Line type="monotone" dataKey="wbi" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <p className="text-xs text-slate-300 mt-2 bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 leading-relaxed">
+              {wbiBand === 'Amber' 
+                ? "Moderate stress detected. Your weekly study load has been automatically reduced by 30% and a rest day scheduled."
+                : wbiBand === 'Red'
+                ? "High strain detected. Intensive roadmap tasks are paused. Reach out to student counselling support."
+                : "Your wellbeing indicators are stable. Keep up your balanced routine!"}
+            </p>
+          </div>
+
+          <button 
+            onClick={() => setActiveTab('wellbeing')}
+            className="w-full bg-slate-700 hover:bg-slate-600 text-sky-400 border border-sky-500/30 text-xs font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 mt-2"
+          >
+            <span>Complete Daily Assessment & Journal Check-In</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+      </div>
+
+      {/* USP Features Row: Burnout Predictor + Job Market Pulse + Mindful Gamification */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+          <span>Unique Selling Proposition (USP) AI Engines</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <BurnoutEarlyWarningCard />
+          <JobMarketPulseCard targetRole={user?.targetRole || "Software Engineer"} />
+          <MindfulGamificationCard wbiBand={wbiBand} />
+        </div>
+      </div>
+
+      {/* Quick Launch Tools Grid */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+          Student Career Tools
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <div 
+            onClick={() => setActiveTab('roadmap')}
+            className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl p-4 cursor-pointer transition hover:border-sky-500/50 group space-y-2 shadow-md"
+          >
+            <div className="h-10 w-10 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center group-hover:scale-110 transition">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <h4 className="text-sm font-bold text-white group-hover:text-sky-400 transition">
+              Step-by-Step Roadmap
+            </h4>
+            <p className="text-xs text-slate-400">
+              Beginner-friendly learning paths with pre-resolved NPTEL, Coursera & YouTube links.
+            </p>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('tutor')}
+            className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl p-4 cursor-pointer transition hover:border-indigo-500/50 group space-y-2 shadow-md"
+          >
+            <div className="h-10 w-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition">
+              <Brain className="h-5 w-5" />
+            </div>
+            <h4 className="text-sm font-bold text-white group-hover:text-indigo-400 transition">
+              Hugging Face RAG Tutor
+            </h4>
+            <p className="text-xs text-slate-400">
+              Ask questions grounded in verified course materials with source citations.
+            </p>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('interview')}
+            className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl p-4 cursor-pointer transition hover:border-emerald-500/50 group space-y-2 shadow-md"
+          >
+            <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition">
+              <Video className="h-5 w-5" />
+            </div>
+            <h4 className="text-sm font-bold text-white group-hover:text-emerald-400 transition">
+              AI Mock Interview
+            </h4>
+            <p className="text-xs text-slate-400">
+              Simulate role interviews or paste GitHub repo for codebase-aware questions.
+            </p>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('resume')}
+            className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl p-4 cursor-pointer transition hover:border-purple-500/50 group space-y-2 shadow-md"
+          >
+            <div className="h-10 w-10 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition">
+              <FileText className="h-5 w-5" />
+            </div>
+            <h4 className="text-sm font-bold text-white group-hover:text-purple-400 transition">
+              ATS Resume Analyzer
+            </h4>
+            <p className="text-xs text-slate-400">
+              Scan resume against Job Description, extract missing skills & action verbs.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  );
+}

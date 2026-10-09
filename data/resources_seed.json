@@ -1,0 +1,112 @@
+[
+  {
+    "id": "res-1",
+    "topic_keywords": ["python", "programming", "python basics", "python syntax"],
+    "title": "Python for Everybody Specialization",
+    "type": "Course",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/specializations/python",
+    "is_free": true,
+    "level": "Beginner",
+    "rating": 4.8
+  },
+  {
+    "id": "res-2",
+    "topic_keywords": ["python", "machine learning", "data science", "python tutorial"],
+    "title": "Python Programming Full Course",
+    "type": "Video",
+    "provider": "freeCodeCamp",
+    "url": "https://www.youtube.com/watch?v=rfscVS0vtbw",
+    "is_free": true,
+    "level": "Beginner",
+    "rating": 4.9
+  },
+  {
+    "id": "res-3",
+    "topic_keywords": ["sql", "database", "relational database", "queries"],
+    "title": "SQL Tutorial - Full Database Course for Beginners",
+    "type": "Video",
+    "provider": "freeCodeCamp",
+    "url": "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+    "is_free": true,
+    "level": "Beginner",
+    "rating": 4.9
+  },
+  {
+    "id": "res-4",
+    "topic_keywords": ["dsa", "data structures", "algorithms", "leetcode"],
+    "title": "NeetCode 150 DSA Roadmap & Solutions",
+    "type": "Interactive Guide",
+    "provider": "NeetCode",
+    "url": "https://neetcode.io",
+    "is_free": true,
+    "level": "Intermediate",
+    "rating": 5.0
+  },
+  {
+    "id": "res-5",
+    "topic_keywords": ["react", "frontend", "javascript", "reactjs"],
+    "title": "React Official Documentation & Interactive Guide",
+    "type": "Documentation",
+    "provider": "React Core Team",
+    "url": "https://react.dev",
+    "is_free": true,
+    "level": "Beginner to Advanced",
+    "rating": 4.9
+  },
+  {
+    "id": "res-6",
+    "topic_keywords": ["fastapi", "python api", "backend", "rest api"],
+    "title": "FastAPI Web Framework Documentation",
+    "type": "Documentation",
+    "provider": "FastAPI",
+    "url": "https://fastapi.tiangolo.com",
+    "is_free": true,
+    "level": "Intermediate",
+    "rating": 4.9
+  },
+  {
+    "id": "res-7",
+    "topic_keywords": ["machine learning", "ml", "ai", "deep learning"],
+    "title": "Machine Learning Specialization by Andrew Ng",
+    "type": "Course",
+    "provider": "Coursera / DeepLearning.AI",
+    "url": "https://www.coursera.org/specializations/machine-learning-introduction",
+    "is_free": true,
+    "level": "Beginner",
+    "rating": 4.9
+  },
+  {
+    "id": "res-8",
+    "topic_keywords": ["system design", "architecture", "distributed systems"],
+    "title": "The System Design Primer",
+    "type": "GitHub Repository",
+    "provider": "GitHub",
+    "url": "https://github.com/donnemartin/system-design-primer",
+    "is_free": true,
+    "level": "Advanced",
+    "rating": 5.0
+  },
+  {
+    "id": "res-9",
+    "topic_keywords": ["web development", "full stack", "html", "css", "javascript"],
+    "title": "The Odin Project - Full Stack Curriculum",
+    "type": "Course",
+    "provider": "The Odin Project",
+    "url": "https://www.theodinproject.com",
+    "is_free": true,
+    "level": "Beginner",
+    "rating": 4.9
+  },
+  {
+    "id": "res-10",
+    "topic_keywords": ["nptel", "computer science", "india university"],
+    "title": "NPTEL Online Courses & Computer Science Tracks",
+    "type": "Course",
+    "provider": "NPTEL / IITs",
+    "url": "https://nptel.ac.in",
+    "is_free": true,
+    "level": "All Levels",
+    "rating": 4.7
+  }
+]
