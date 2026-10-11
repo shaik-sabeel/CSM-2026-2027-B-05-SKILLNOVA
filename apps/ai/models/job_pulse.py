@@ -37,8 +37,8 @@ def analyze_job_market_pulse(target_role: str, user_skills: List[str]) -> Dict[s
     demand = set(s.lower() for s in data["high_demand_skills"])
     
     missing = [s for s in data["high_demand_skills"] if s.lower() not in found]
-    alignment_pct = min(100, int((len(found & demand) / max(1, len(demand))) * 100)) if demand else 75
-    alignment_pct = max(60, alignment_pct)
+    matching_count = len(found & demand)
+    alignment_pct = min(100, int((matching_count / max(1, len(demand))) * 100)) if demand else 0
 
     return {
         "target_role": target_role.title(),

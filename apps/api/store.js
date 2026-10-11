@@ -12,6 +12,10 @@ export const inMemoryStore = {
       targetRole: 'Software Engineer',
       level: 'intermediate',
       weeklyHours: 10,
+      streak: 1,
+      freezeCredits: 2,
+      restDayActive: false,
+      resumeScore: 0,
       consent: { wellbeing: true, behaviour: true, counsellorShare: true }
     },
     {
@@ -20,6 +24,10 @@ export const inMemoryStore = {
       email: 'counsellor@college.edu',
       passwordHash: bcrypt.hashSync('counsellor123', 8),
       role: 'counsellor',
+      streak: 1,
+      freezeCredits: 2,
+      restDayActive: false,
+      resumeScore: 0,
       consent: { wellbeing: true, behaviour: true, counsellorShare: true }
     }
   ],

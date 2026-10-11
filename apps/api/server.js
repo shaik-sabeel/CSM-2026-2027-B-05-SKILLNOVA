@@ -60,8 +60,8 @@ const authorizeRoles = (...allowedRoles) => {
 
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password, role = 'student', targetRole = 'Software Engineer' } = req.body;
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: 'Name, email, and password are required' });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
   }
 
   const existing = inMemoryStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -69,22 +69,44 @@ app.post('/api/auth/register', (req, res) => {
     return res.status(400).json({ error: 'User with this email already exists' });
   }
 
+  // Generate clean display name if not provided
+  const rawEmailName = email.split('@')[0].replace(/[._-]/g, ' ');
+  const formattedName = rawEmailName.replace(/\b\w/g, c => c.toUpperCase());
+  const displayName = (name && name.trim().length > 0 && !name.includes('@')) ? name.trim() : formattedName;
+
   const newUser = {
     id: `u-${Date.now()}`,
-    name,
+    name: displayName,
     email: email.toLowerCase(),
     passwordHash: bcrypt.hashSync(password, 8),
     role,
-    targetRole,
+    targetRole: targetRole || 'Software Engineer',
     level: 'beginner',
     weeklyHours: 10,
-    consent: { wellbeing: true, behaviour: true, counsellorShare: false }
+    streak: 1,
+    freezeCredits: 2,
+    restDayActive: false,
+    resumeScore: 0,
+    consent: { wellbeing: true, behaviour: true, counsellorShare: false },
+    createdAt: new Date().toISOString()
   };
 
   inMemoryStore.users.push(newUser);
   const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role, name: newUser.name }, JWT_SECRET, { expiresIn: '7d' });
 
-  res.json({ token, user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, targetRole: newUser.targetRole } });
+  res.json({
+    token,
+    user: {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      targetRole: newUser.targetRole,
+      streak: newUser.streak,
+      freezeCredits: newUser.freezeCredits,
+      restDayActive: newUser.restDayActive
+    }
+  });
 });
 
 app.post('/api/auth/login', (req, res) => {
@@ -95,13 +117,35 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, targetRole: user.targetRole } });
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      targetRole: user.targetRole,
+      streak: user.streak || 1,
+      freezeCredits: user.freezeCredits ?? 2,
+      restDayActive: !!user.restDayActive
+    }
+  });
 });
 
 app.get('/api/auth/me', authenticateToken, (req, res) => {
   const user = inMemoryStore.users.find(u => u.id === req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ id: user.id, name: user.name, email: user.email, role: user.role, targetRole: user.targetRole, consent: user.consent });
+  res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    targetRole: user.targetRole,
+    consent: user.consent,
+    streak: user.streak || 1,
+    freezeCredits: user.freezeCredits ?? 2,
+    restDayActive: !!user.restDayActive
+  });
 });
 
 // --- Dynamic Profile Update ---
@@ -125,59 +169,144 @@ app.get('/api/dashboard/summary', optionalAuth, async (req, res) => {
     const user = inMemoryStore.users.find(u => u.id === userId);
     const userRoadmaps = inMemoryStore.roadmaps.filter(r => r.userId === userId);
     const userCheckins = inMemoryStore.checkins.filter(c => c.userId === userId);
+    const userInterviews = (inMemoryStore.interviewHistory || []).filter(i => i.userId === userId);
     
     let activeRoadmap = userRoadmaps.length > 0 ? userRoadmaps[userRoadmaps.length - 1] : null;
     let completedTopics = 0;
     let totalTopics = 0;
 
-    if (activeRoadmap) {
+    if (activeRoadmap && activeRoadmap.phases) {
       activeRoadmap.phases.forEach(phase => {
-        phase.topics.forEach(t => {
+        (phase.topics || []).forEach(t => {
           totalTopics++;
           if (t.status === 'completed') completedTopics++;
         });
       });
     }
 
+    // Dynamic, authentic calculations reflecting actual user state
+    const skillMastery = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+    const interviewScore = userInterviews.length > 0
+      ? Math.round(userInterviews.reduce((acc, curr) => acc + (curr.score || 70), 0) / userInterviews.length)
+      : 0;
+    const resumeScore = user?.resumeScore || 0;
+    const projectScore = (activeRoadmap?.phases && activeRoadmap.phases.some(p => p.project_selected)) ? 50 : 0;
+    const studyConsistency = (completedTopics > 0 || userCheckins.length > 0)
+      ? Math.min(100, (completedTopics * 12) + (userCheckins.length * 15) + ((user?.streak || 1) * 5))
+      : 0;
+
+    const targetRole = user?.targetRole || activeRoadmap?.skill || "Software Engineer";
+    const completedSkillNames = (activeRoadmap && activeRoadmap.phases)
+      ? activeRoadmap.phases.flatMap(p => (p.topics || []).filter(t => t.status === 'completed').map(t => t.name.toLowerCase()))
+      : [];
+
     const [readinessRes, burnoutRes, jobPulseRes] = await Promise.all([
       axios.post(`${PYTHON_AI_URL}/ai/readiness/predict`, {
-        skill_mastery: totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 80.0,
-        interview_score: 82.0,
-        resume_score: 75.0,
-        project_score: 85.0,
-        study_consistency: 88.0
-      }).catch(() => ({ data: { readiness_score: 82.5, placement_tier: "Placement Ready (Tier 1)", shap_feature_importance: { "Skill Mastery": 8.5, "Mock Interview": 7.5, "Resume Quality": 4.0, "Study Consistency": 6.5, "Project Capstone": 4.5 } } })),
+        skill_mastery: skillMastery,
+        interview_score: interviewScore,
+        resume_score: resumeScore,
+        project_score: projectScore,
+        study_consistency: studyConsistency
+      }).catch(() => ({
+        data: {
+          readiness_score: 0.0,
+          placement_tier: "Onboarding (New Student)",
+          shap_feature_importance: {
+            "Skill Mastery": 0.0,
+            "Mock Interview": 0.0,
+            "Resume Quality": 0.0,
+            "Study Consistency": 0.0,
+            "Project Capstone": 0.0
+          },
+          top_improvement_area: "Start Skill Roadmap"
+        }
+      })),
 
       axios.post(`${PYTHON_AI_URL}/ai/burnout/predict`, {
-        mood_history: userCheckins.slice(-5).map(c => c.mood_rating) || [4, 4, 3, 2, 2],
-        sleep_hours: [7.5, 7.0, 6.0, 5.0, 4.5],
-        streak_breaks: 1
-      }).catch(() => ({ data: { burnout_score: 28.5, warning_level: "Optimal Energy & Pacing", ewma_mood_trend: 4.2, avg_sleep_hours: 7.5, recommended_interventions: ["Keep up your healthy study-rest balance!"] } })),
+        mood_history: userCheckins.length > 0 ? userCheckins.map(c => c.mood_rating) : [],
+        sleep_hours: userCheckins.length > 0 ? userCheckins.map(c => c.sleep_hours || 7.5) : [],
+        streak_breaks: 0
+      }).catch(() => ({
+        data: {
+          burnout_score: 0.0,
+          warning_level: "Optimal Baseline (No Burnout)",
+          ewma_mood_trend: null,
+          avg_sleep_hours: null,
+          days_to_burnout_threshold: 30,
+          is_declining_trend: false,
+          recommended_interventions: ["Log your daily wellbeing check-ins to activate monitoring."]
+        }
+      })),
 
       axios.post(`${PYTHON_AI_URL}/ai/jobpulse/analyze`, {
-        target_role: user?.targetRole || "Software Engineer",
-        user_skills: ["python", "react", "sql"]
-      }).catch(() => ({ data: { target_role: user?.targetRole || "Software Engineer", market_alignment_score: 85, avg_industry_salary: "$75,000 - $120,000", salary_boost_recommendations: [{ skill: "RAG / LLM Agents", boost: "+28% Salary Boost" }] } }))
+        target_role: targetRole,
+        user_skills: completedSkillNames
+      }).catch(() => ({
+        data: {
+          target_role: targetRole,
+          market_alignment_score: 0,
+          avg_industry_salary: "$75,000 - $120,000",
+          salary_boost_recommendations: [
+            { skill: "RAG / LLM Agents", boost: "+28% Salary Boost" },
+            { skill: "Docker & Kubernetes", boost: "+20% Salary Boost" }
+          ]
+        }
+      }))
     ]);
 
     res.json({
-      user: { id: user?.id || userId, name: user?.name || "Guest Student", email: user?.email || "guest@courseconnect.ai", targetRole: user?.targetRole || "Software Engineer" },
+      user: {
+        id: user?.id || userId,
+        name: user?.name || "Guest Student",
+        email: user?.email || "guest@courseconnect.ai",
+        targetRole: user?.targetRole || targetRole
+      },
       readiness: readinessRes.data,
       burnout: burnoutRes.data,
       jobPulse: jobPulseRes.data,
       roadmapProgress: {
         hasActiveRoadmap: !!activeRoadmap,
-        skill: activeRoadmap?.skill || "Software Development",
+        skill: activeRoadmap?.skill || targetRole,
         completedTopics,
         totalTopics,
-        progressPct: totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 35
+        progressPct: totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0
       },
-      checkins: userCheckins.slice(-7)
+      checkins: userCheckins.map((c, i) => ({
+        id: c.id,
+        date: c.date ? new Date(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : `Check ${i + 1}`,
+        wbi: c.wellbeing_analysis?.wbi_score,
+        band: c.wellbeing_analysis?.band,
+        mood: c.mood_rating
+      })),
+      gamification: {
+        streak: user?.streak || 1,
+        restDayCredits: user?.freezeCredits ?? 2,
+        restDayActive: !!user?.restDayActive
+      }
     });
   } catch (error) {
     console.error('Error fetching dashboard summary:', error.message);
     res.status(500).json({ error: 'Failed to fetch dashboard summary' });
   }
+});
+
+// Claim Streak Freeze Endpoint
+app.post('/api/gamification/use-freeze', optionalAuth, (req, res) => {
+  const userId = req.user?.id || 'u-guest';
+  const user = inMemoryStore.users.find(u => u.id === userId);
+  if (user) {
+    if ((user.freezeCredits ?? 2) > 0 && !user.restDayActive) {
+      user.freezeCredits = (user.freezeCredits ?? 2) - 1;
+      user.restDayActive = true;
+    }
+    return res.json({
+      message: 'Streak freeze activated for today',
+      streak: user.streak || 1,
+      restDayCredits: user.freezeCredits ?? 1,
+      restDayActive: !!user.restDayActive
+    });
+  }
+  res.json({ message: 'Streak freeze active', streak: 1, restDayCredits: 1, restDayActive: true });
 });
 
 // --- Dynamic Roadmap Endpoints ---
@@ -288,6 +417,23 @@ app.get('/api/wellbeing/schema', optionalAuth, async (req, res) => {
 app.post('/api/wellbeing/analyze', optionalAuth, async (req, res) => {
   try {
     const response = await axios.post(`${PYTHON_AI_URL}/ai/wellbeing/analyze`, req.body);
+    const userId = req.user?.id || 'u-guest';
+    const userName = req.user?.name || 'Student';
+
+    // Automatically persist in user's checkins collection so all dashboard cards stay dynamic
+    const checkin = {
+      id: `chk-${Date.now()}`,
+      userId,
+      userName,
+      date: new Date().toISOString(),
+      mood_rating: req.body.mood_rating || 3,
+      sleep_hours: req.body.sleep_hours || 7.5,
+      journal_text: req.body.journal_text || '',
+      wellbeing_analysis: response.data,
+      safety_eval: { is_crisis: false }
+    };
+    inMemoryStore.checkins.push(checkin);
+
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: 'Wellbeing analysis failed' });

@@ -2,31 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, Zap, Award, ArrowUpRight, DollarSign } from 'lucide-react';
 import api from '../services/api';
 
-export default function JobMarketPulseCard({ targetRole = "Software Engineer" }) {
+export default function JobMarketPulseCard({ pulseData, targetRole = "Software Engineer" }) {
   const [pulse, setPulse] = useState({
-    target_role: "Software Engineer",
-    market_alignment_score: 85,
-    industry_relevance_index: 92,
+    target_role: targetRole,
+    market_alignment_score: 0,
+    industry_relevance_index: 90,
     high_demand_skills: ["Python", "React", "FastAPI", "Docker", "RAG / LLMs", "SQL"],
-    missing_high_demand_skills: ["RAG / LLMs", "Docker & Kubernetes"],
+    missing_high_demand_skills: ["Python", "React", "FastAPI", "Docker", "RAG / LLMs", "SQL"],
     avg_industry_salary: "$75,000 - $120,000",
     salary_boost_recommendations: [
       { skill: "RAG / LLM Agents", boost: "+28% Salary Boost" },
-      { skill: "Docker & Kubernetes", boost: "+20% Salary Boost" }
+      { skill: "Docker & Kubernetes", boost: "+20% Salary Boost" },
+      { skill: "System Design Architecture", boost: "+25% Salary Boost" }
     ]
   });
 
   useEffect(() => {
-    fetchJobPulse();
-  }, [targetRole]);
+    if (pulseData) {
+      setPulse(pulseData);
+    } else {
+      fetchJobPulse();
+    }
+  }, [pulseData, targetRole]);
 
   const fetchJobPulse = async () => {
     try {
       const res = await api.post('/jobpulse/analyze', {
         target_role: targetRole,
-        user_skills: ["python", "react", "sql"]
+        user_skills: []
       });
-      setPulse(res.data);
+      if (res.data) setPulse(res.data);
     } catch (err) {
       console.error('Job pulse error:', err);
     }

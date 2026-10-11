@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
 import { Flame, ShieldCheck, HeartPulse, Award, Sparkles, CheckCircle2 } from 'lucide-react';
+import api from '../services/api';
 
-export default function MindfulGamificationCard({ wbiBand = 'Green' }) {
-  const [streak, setStreak] = useState(12);
-  const [restDayCredits, setRestDayCredits] = useState(2);
-  const [restDayActive, setRestDayActive] = useState(false);
+export default function MindfulGamificationCard({ gamificationData, wbiBand = 'Green', onFreezeUsed }) {
+  const [localFreezeActive, setLocalFreezeActive] = useState(false);
+  const [localCredits, setLocalCredits] = useState(null);
+  const [freezeLoading, setFreezeLoading] = useState(false);
 
-  const handleUseStreakFreeze = () => {
-    if (restDayCredits > 0 && !restDayActive) {
-      setRestDayCredits(prev => prev - 1);
-      setRestDayActive(true);
+  const streak = gamificationData?.streak ?? 1;
+  const restDayCredits = localCredits !== null ? localCredits : (gamificationData?.restDayCredits ?? 2);
+  const restDayActive = localFreezeActive || (gamificationData?.restDayActive ?? false);
+
+  const handleUseStreakFreeze = async () => {
+    if (restDayCredits <= 0 || restDayActive || freezeLoading) return;
+    setFreezeLoading(true);
+    try {
+      const res = await api.post('/gamification/use-freeze');
+      setLocalFreezeActive(true);
+      setLocalCredits(res.data.restDayCredits ?? (restDayCredits - 1));
+      if (onFreezeUsed) onFreezeUsed(res.data);
+    } catch (err) {
+      console.error('Streak freeze failed:', err);
+      // Fallback optimistic UI
+      setLocalFreezeActive(true);
+      setLocalCredits(Math.max(0, restDayCredits - 1));
+    } finally {
+      setFreezeLoading(false);
     }
   };
 
@@ -22,7 +38,7 @@ export default function MindfulGamificationCard({ wbiBand = 'Green' }) {
         </div>
         <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/30 flex items-center space-x-1">
           <Award className="h-3.5 w-3.5" />
-          <span>Mindful Learner Badge</span>
+          <span>{streak <= 1 ? '🌱 New Learner' : 'Mindful Learner Badge'}</span>
         </span>
       </div>
 
@@ -33,7 +49,7 @@ export default function MindfulGamificationCard({ wbiBand = 'Green' }) {
           </div>
           <div>
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Study Streak</span>
-            <span className="text-xs font-bold text-white">{streak} Days Active</span>
+            <span className="text-xs font-bold text-white">{streak} {streak === 1 ? 'Day' : 'Days'} Active</span>
           </div>
         </div>
 
@@ -43,7 +59,7 @@ export default function MindfulGamificationCard({ wbiBand = 'Green' }) {
           </div>
           <div>
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Rest-Day Credits</span>
-            <span className="text-xs font-bold text-white">{restDayCredits} Freezes Left</span>
+            <span className="text-xs font-bold text-white">{restDayCredits} {restDayCredits === 1 ? 'Freeze' : 'Freezes'} Left</span>
           </div>
         </div>
       </div>

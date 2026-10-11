@@ -24,10 +24,18 @@ const BAND_BG    = {
 };
 
 function BandPill({ band, wbi }) {
+  if (band === 'Unassessed' || !wbi) {
+    return (
+      <span className="text-xs px-3 py-1 rounded-full font-bold border border-slate-600 bg-slate-800 text-slate-300 flex items-center gap-1.5 shadow-sm">
+        <span className="h-2 w-2 rounded-full bg-slate-400" />
+        Unassessed Baseline · Awaiting First Check-in
+      </span>
+    );
+  }
   return (
     <span className={`text-xs px-3 py-1 rounded-full font-bold border flex items-center gap-1.5 ${BAND_BG[band] || BAND_BG.Green}`}>
       <span className="h-2 w-2 rounded-full animate-ping" style={{ backgroundColor: BAND_COLOR[band] || '#10b981' }} />
-      Band: {band} &nbsp;|&nbsp; Stress Index {wbi || 24}%
+      Band: {band} &nbsp;|&nbsp; Stress Index {wbi}%
     </span>
   );
 }
@@ -392,8 +400,28 @@ export default function WellbeingHub({ wbiBand, setWbiBand, wbiScore, setWbiScor
   };
 
   useEffect(() => {
+    fetchLatestCheckin();
     return () => { stopCalmSound(); };
-  }, []);
+  }, [user]);
+
+  const fetchLatestCheckin = async () => {
+    try {
+      const res = await api.get('/checkins');
+      if (res.data && res.data.length > 0) {
+        const latest = res.data[res.data.length - 1];
+        if (latest.wellbeing_analysis) {
+          const wa = latest.wellbeing_analysis;
+          setAssessResult(wa.assessment || wa.breakdown?.questionnaire);
+          setWbiScore(wa.wbi_score);
+          setWbiBand(wa.band);
+          if (wa.dashboard) setDashCharts(wa.dashboard);
+          if (wa.breakdown?.journal_nlp) setJournalNLP(wa.breakdown.journal_nlp);
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching user checkins in WellbeingHub:', e);
+    }
+  };
 
   // 4-7-8 Breathing Cycle
   useEffect(() => {

@@ -90,11 +90,11 @@ class ReplanReq(BaseModel):
     wbi_band: str
 
 class ReadinessReq(BaseModel):
-    skill_mastery: float = 75.0
-    interview_score: float = 80.0
-    resume_score: float = 70.0
-    project_score: float = 85.0
-    study_consistency: float = 90.0
+    skill_mastery: float = 0.0
+    interview_score: float = 0.0
+    resume_score: float = 0.0
+    project_score: float = 0.0
+    study_consistency: float = 0.0
 
 class QuizGenReq(BaseModel):
     topic: str
@@ -106,7 +106,7 @@ class RepoReq(BaseModel):
 class BurnoutReq(BaseModel):
     mood_history: Optional[List[int]] = None
     sleep_hours: Optional[List[float]] = None
-    streak_breaks: int = 1
+    streak_breaks: int = 0
 
 class JobPulseReq(BaseModel):
     target_role: str = "Software Engineer"
@@ -205,8 +205,8 @@ def analyze_repo(req: RepoReq):
 @app.post("/ai/burnout/predict")
 def predict_burnout(req: BurnoutReq):
     return predict_burnout_risk(
-        mood_history=req.mood_history or [4, 4, 3, 2, 2],
-        sleep_hours=req.sleep_hours or [7.5, 7.0, 6.0, 5.0, 4.5],
+        mood_history=req.mood_history if req.mood_history is not None else [],
+        sleep_hours=req.sleep_hours if req.sleep_hours is not None else [],
         streak_breaks=req.streak_breaks
     )
 
@@ -214,8 +214,8 @@ def predict_burnout(req: BurnoutReq):
 def analyze_job_pulse(req: JobPulseReq):
     return analyze_job_market_pulse(
         target_role=req.target_role,
-        user_skills=req.user_skills or ["python", "react", "sql"]
+        user_skills=req.user_skills if req.user_skills is not None else []
     )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

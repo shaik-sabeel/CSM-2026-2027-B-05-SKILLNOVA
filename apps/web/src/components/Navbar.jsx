@@ -30,6 +30,7 @@ export default function Navbar({
     switch (band) {
       case 'Red': return 'bg-red-500/20 text-red-400 border-red-500/40';
       case 'Amber': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+      case 'Unassessed': return 'bg-slate-700/60 text-slate-300 border-slate-600/60';
       default: return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
     }
   };
@@ -83,7 +84,7 @@ export default function Navbar({
             {/* Wellbeing Band Indicator Pill */}
             <div className={`px-3 py-1.5 rounded-full border text-xs font-bold flex items-center space-x-1.5 ${getBandColor(wbiBand)}`}>
               <HeartPulse className="h-3.5 w-3.5 animate-pulse" />
-              <span>WBI: {wbiBand} Band</span>
+              <span>WBI: {wbiBand === 'Unassessed' ? 'Unassessed' : `${wbiBand} Band`}</span>
             </div>
 
             {user ? (

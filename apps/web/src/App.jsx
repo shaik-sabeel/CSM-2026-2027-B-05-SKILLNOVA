@@ -14,8 +14,8 @@ import api from './services/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
-  const [wbiBand, setWbiBand] = useState('Green');
-  const [wbiScore, setWbiScore] = useState(24.5);
+  const [wbiBand, setWbiBand] = useState('Unassessed');
+  const [wbiScore, setWbiScore] = useState(null);
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
@@ -31,16 +31,37 @@ export default function App() {
     try {
       const res = await api.get('/auth/me');
       setUser(res.data);
+      await syncUserWellbeing();
     } catch (err) {
       console.error('Failed to verify token:', err);
       localStorage.removeItem('courseconnect_token');
       localStorage.removeItem('courseconnect_user');
       setUser(null);
+      setWbiBand('Unassessed');
+      setWbiScore(null);
     }
   };
 
-  const handleAuthSuccess = (userData, token) => {
+  const syncUserWellbeing = async () => {
+    try {
+      const checkinsRes = await api.get('/checkins');
+      if (checkinsRes.data && checkinsRes.data.length > 0) {
+        const latest = checkinsRes.data[checkinsRes.data.length - 1];
+        setWbiBand(latest.wellbeing_analysis?.band || 'Green');
+        setWbiScore(latest.wellbeing_analysis?.wbi_score ?? 25);
+      } else {
+        setWbiBand('Unassessed');
+        setWbiScore(null);
+      }
+    } catch (e) {
+      setWbiBand('Unassessed');
+      setWbiScore(null);
+    }
+  };
+
+  const handleAuthSuccess = async (userData, token) => {
     setUser(userData);
+    await syncUserWellbeing();
     setActiveTab('dashboard');
   };
 
@@ -48,6 +69,8 @@ export default function App() {
     localStorage.removeItem('courseconnect_token');
     localStorage.removeItem('courseconnect_user');
     setUser(null);
+    setWbiBand('Unassessed');
+    setWbiScore(null);
     setActiveTab('landing');
   };
 

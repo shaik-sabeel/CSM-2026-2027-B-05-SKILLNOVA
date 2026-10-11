@@ -11,10 +11,23 @@ def predict_burnout_risk(
     Burnout Early-Warning Predictor using Exponentially Weighted Moving Average (EWMA)
     and Change-Point Detection algorithms. Predicts burnout 7-14 days in advance.
     """
-    if not mood_history:
-        mood_history = [4, 4, 3, 2, 2]
-    if not sleep_hours:
-        sleep_hours = [7.5, 7.0, 6.0, 5.0, 4.5]
+    # Handle brand-new user with no check-in history
+    if not mood_history or len(mood_history) == 0:
+        return {
+            "burnout_score": 0.0,
+            "warning_level": "Optimal Baseline (No Burnout)",
+            "ewma_mood_trend": None,
+            "avg_sleep_hours": None,
+            "days_to_burnout_threshold": 30,
+            "is_declining_trend": False,
+            "recommended_interventions": [
+                "Welcome! Complete daily wellbeing check-ins to activate continuous EWMA AI monitoring.",
+                "Maintain healthy sleep and regular study intervals."
+            ]
+        }
+
+    if not sleep_hours or len(sleep_hours) == 0:
+        sleep_hours = [7.5] * len(mood_history)
 
     # Compute EWMA for mood (alpha = 0.4)
     alpha = 0.4

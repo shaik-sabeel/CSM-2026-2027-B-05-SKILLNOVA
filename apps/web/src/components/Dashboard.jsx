@@ -14,33 +14,52 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
   const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     readiness: {
-      readiness_score: 82.5,
-      placement_tier: "Placement Ready (Tier 1)",
+      readiness_score: 0.0,
+      placement_tier: "Onboarding (New Student)",
       shap_feature_importance: {
-        "Skill Mastery": 8.5,
-        "Mock Interview": 7.5,
-        "Resume Quality": 4.0,
-        "Study Consistency": 6.5,
-        "Project Capstone": 4.5
+        "Skill Mastery": 0.0,
+        "Mock Interview": 0.0,
+        "Resume Quality": 0.0,
+        "Study Consistency": 0.0,
+        "Project Capstone": 0.0
       },
-      top_improvement_area: "Resume Quality"
+      top_improvement_area: "Start Skill Roadmap"
+    },
+    burnout: {
+      burnout_score: 0.0,
+      warning_level: "Optimal Baseline (No Burnout)",
+      ewma_mood_trend: null,
+      avg_sleep_hours: null,
+      days_to_burnout_threshold: 30,
+      is_declining_trend: false,
+      recommended_interventions: ["Complete daily wellbeing check-ins to activate your EWMA AI monitor."]
+    },
+    jobPulse: {
+      target_role: user?.targetRole || "Software Engineer",
+      market_alignment_score: 0,
+      industry_relevance_index: 90,
+      high_demand_skills: ["Python", "React", "FastAPI", "Docker", "RAG / LLMs", "SQL"],
+      missing_high_demand_skills: ["Python", "React", "FastAPI", "Docker", "RAG / LLMs", "SQL"],
+      avg_industry_salary: "$75,000 - $120,000",
+      salary_boost_recommendations: [
+        { skill: "RAG / LLM Agents", boost: "+28% Salary Boost" },
+        { skill: "Docker & Kubernetes", boost: "+20% Salary Boost" },
+        { skill: "System Design Architecture", boost: "+25% Salary Boost" }
+      ]
+    },
+    gamification: {
+      streak: user?.streak || 1,
+      restDayCredits: user?.freezeCredits ?? 2,
+      restDayActive: !!user?.restDayActive
     },
     roadmapProgress: {
-      hasActiveRoadmap: true,
-      skill: user?.targetRole || "Software Development",
-      completedTopics: 3,
-      totalTopics: 7,
-      progressPct: 43
+      hasActiveRoadmap: false,
+      skill: user?.targetRole || "Software Engineer",
+      completedTopics: 0,
+      totalTopics: 0,
+      progressPct: 0
     },
-    assessmentHistory: [
-      { date: 'Mon', wbi: 20 },
-      { date: 'Tue', wbi: 35 },
-      { date: 'Wed', wbi: 22 },
-      { date: 'Thu', wbi: 55 },
-      { date: 'Fri', wbi: 25 },
-      { date: 'Sat', wbi: 15 },
-      { date: 'Sun', wbi: 24 }
-    ]
+    assessmentHistory: []
   });
 
   useEffect(() => {
@@ -55,10 +74,16 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
         setDashboardData(prev => ({
           ...prev,
           readiness: res.data.readiness || prev.readiness,
+          burnout: res.data.burnout || prev.burnout,
+          jobPulse: res.data.jobPulse || prev.jobPulse,
+          gamification: res.data.gamification || prev.gamification,
           roadmapProgress: res.data.roadmapProgress || prev.roadmapProgress,
           assessmentHistory: (res.data.checkins && res.data.checkins.length > 0)
-            ? res.data.checkins.map((c, i) => ({ date: `Check ${i+1}`, wbi: c.wellbeing_analysis?.wbi_score || 25 }))
-            : prev.assessmentHistory
+            ? res.data.checkins.map((c, i) => ({
+                date: c.date || `Check ${i + 1}`,
+                wbi: c.wbi !== undefined ? c.wbi : 25
+              }))
+            : []
         }));
       }
     } catch (err) {
@@ -70,6 +95,7 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
 
   const readiness = dashboardData.readiness;
   const progress = dashboardData.roadmapProgress;
+  const hasCheckins = dashboardData.assessmentHistory.length > 0;
 
   return (
     <div className="space-y-6">
@@ -103,7 +129,7 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
             </h1>
             <button 
               onClick={fetchDashboardSummary} 
-              className="text-slate-400 hover:text-white text-xs font-medium flex items-center space-x-1"
+              className="text-slate-400 hover:text-white text-xs font-medium flex items-center space-x-1 bg-slate-800/80 hover:bg-slate-750 px-3 py-1.5 rounded-lg border border-slate-700"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh Metrics</span>
@@ -111,7 +137,7 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
           </div>
 
           <p className="text-slate-300 text-sm leading-relaxed">
-            Your career readiness pipeline is dynamically active for <strong className="text-sky-300">{user?.targetRole || 'Software Development'}</strong>. CourseConnect balances your technical upskilling with real-time mental health tracking so you land placements without burnout.
+            Your career readiness pipeline is dynamically active for <strong className="text-sky-300">{user?.targetRole || 'Software Engineer'}</strong>. CourseConnect balances your technical upskilling with real-time mental health tracking so you land placements without burnout.
           </p>
 
           {!user && (
@@ -129,35 +155,58 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
       </div>
 
       {/* Active Roadmap Progress Banner */}
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
-            <BookOpen className="h-5 w-5" />
+      {progress.hasActiveRoadmap ? (
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="text-[10px] text-sky-400 uppercase font-bold tracking-wider block">Active Skill Roadmap</span>
+              <h3 className="text-base font-bold text-white">{progress.skill}</h3>
+              <span className="text-xs text-slate-400">{progress.completedTopics} of {progress.totalTopics} topics completed</span>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-sky-400 uppercase font-bold tracking-wider block">Active Skill Roadmap</span>
-            <h3 className="text-base font-bold text-white">{progress.skill}</h3>
-            <span className="text-xs text-slate-400">{progress.completedTopics} of {progress.totalTopics} topics completed</span>
+
+          <div className="flex items-center space-x-4 w-full sm:w-auto">
+            <div className="w-36 bg-slate-700 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className="bg-sky-400 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${progress.progressPct}%` }}
+              ></div>
+            </div>
+            <span className="text-xs font-mono font-bold text-white w-10">{progress.progressPct}%</span>
+            <button 
+              onClick={() => setActiveTab('roadmap')}
+              className="bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center space-x-1"
+            >
+              <span>Continue</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
-
-        <div className="flex items-center space-x-4 w-full sm:w-auto">
-          <div className="w-36 bg-slate-700 rounded-full h-2.5 overflow-hidden">
-            <div 
-              className="bg-sky-400 h-full rounded-full transition-all duration-500" 
-              style={{ width: `${progress.progressPct}%` }}
-            ></div>
+      ) : (
+        <div className="bg-gradient-to-r from-slate-800 to-sky-950/40 border border-dashed border-sky-500/40 rounded-2xl p-5 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="h-11 w-11 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <div>
+              <span className="text-[10px] text-amber-400 uppercase font-bold tracking-wider block">No Active Roadmap</span>
+              <h3 className="text-base font-bold text-white">Start Your Learning Journey for {user?.targetRole || 'Software Engineer'}</h3>
+              <span className="text-xs text-slate-400">Generate an AI-curated step-by-step roadmap with verified video & course resources</span>
+            </div>
           </div>
-          <span className="text-xs font-mono font-bold text-white w-10">{progress.progressPct}%</span>
           <button 
             onClick={() => setActiveTab('roadmap')}
-            className="bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center space-x-1"
+            className="bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center space-x-1.5 shadow-lg whitespace-nowrap"
           >
-            <span>Continue</span>
+            <Zap className="h-4 w-4" />
+            <span>Generate AI Roadmap</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
-      </div>
+      )}
 
       {/* Primary Metrics Row: Placement Readiness & Wellbeing Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -184,7 +233,7 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
           <div className="w-full bg-slate-700/60 rounded-full h-3 overflow-hidden">
             <div 
               className="bg-gradient-to-r from-sky-500 to-indigo-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${readiness.readiness_score}%` }}
+              style={{ width: `${Math.max(0, readiness.readiness_score)}%` }}
             ></div>
           </div>
 
@@ -199,13 +248,18 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
                   <span className="text-slate-400">{feature}</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-24 bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-sky-400 h-full rounded-full" style={{ width: `${Math.min(100, val * 8)}%` }}></div>
+                      <div className="bg-sky-400 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, val) * 8)}%` }}></div>
                     </div>
                     <span className="text-slate-200 font-mono w-8 text-right">+{val}</span>
                   </div>
                 </div>
               ))}
             </div>
+            {readiness.readiness_score === 0 && (
+              <p className="text-[11px] text-slate-400 italic pt-1">
+                New student baseline. Complete roadmap topics, take mock interviews, and upload a resume to calculate dynamic ML readiness attribution.
+              </p>
+            )}
           </div>
         </div>
 
@@ -220,30 +274,45 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
                 <h2 className="text-lg font-bold text-slate-100">Mental Wellbeing Sanctuary</h2>
               </div>
               <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
+                !hasCheckins ? 'bg-slate-700/50 text-slate-300 border-slate-600' :
                 wbiBand === 'Red' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
                 wbiBand === 'Amber' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' :
                 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
               }`}>
-                {wbiBand} Safety Band · {wbiScore || 24}% WBI
+                {!hasCheckins ? 'Unassessed Baseline · 0 Check-ins' : `${wbiBand} Safety Band · ${wbiScore || 24}% WBI`}
               </span>
             </div>
 
-            <div className="h-40 w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dashboardData.assessmentHistory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} />
-                  <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 100]} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '11px' }} 
-                  />
-                  <Line type="monotone" dataKey="wbi" name="Stress Index" stroke="#14b8a6" strokeWidth={2.5} dot={{ r: 4, fill: '#14b8a6' }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {hasCheckins ? (
+              <div className="h-40 w-full pt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dashboardData.assessmentHistory}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} />
+                    <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 100]} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '11px' }} 
+                    />
+                    <Line type="monotone" dataKey="wbi" name="Stress Index" stroke="#14b8a6" strokeWidth={2.5} dot={{ r: 4, fill: '#14b8a6' }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-40 w-full my-2 flex flex-col items-center justify-center text-center p-4 bg-slate-900/60 rounded-xl border border-teal-500/20 space-y-2">
+                <div className="h-9 w-9 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center">
+                  <HeartPulse className="h-5 w-5 animate-pulse" />
+                </div>
+                <p className="text-xs font-bold text-white">No Clinical Check-ins Completed Yet</p>
+                <p className="text-[11px] text-slate-400 max-w-xs leading-relaxed">
+                  Complete the 6-question clinical assessment in the Calm Sanctuary to establish your personalized wellbeing baseline.
+                </p>
+              </div>
+            )}
 
             <p className="text-xs text-slate-300 mt-2 bg-slate-900/80 p-3 rounded-xl border border-teal-500/20 leading-relaxed">
-              {wbiBand === 'Amber' 
+              {!hasCheckins
+                ? "Welcome to CourseConnect! Your mental health indicators are currently unassessed. Click below to take your first 2-minute clinical assessment."
+                : wbiBand === 'Amber' 
                 ? "Moderate stress detected. Your weekly study load has been automatically reduced by 30% and a rest day scheduled."
                 : wbiBand === 'Red'
                 ? "High strain detected. Intensive roadmap tasks are paused. Reach out to student counselling support."
@@ -270,9 +339,24 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
           <span>Unique Selling Proposition (USP) AI Engines</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <BurnoutEarlyWarningCard />
-          <JobMarketPulseCard targetRole={user?.targetRole || "Software Engineer"} />
-          <MindfulGamificationCard wbiBand={wbiBand} />
+          <BurnoutEarlyWarningCard 
+            burnoutData={dashboardData.burnout} 
+            checkinsCount={dashboardData.assessmentHistory.length} 
+          />
+          <JobMarketPulseCard 
+            pulseData={dashboardData.jobPulse} 
+            targetRole={user?.targetRole || "Software Engineer"} 
+          />
+          <MindfulGamificationCard 
+            gamificationData={dashboardData.gamification}
+            wbiBand={wbiBand} 
+            onFreezeUsed={(data) => {
+              setDashboardData(prev => ({
+                ...prev,
+                gamification: data
+              }));
+            }}
+          />
         </div>
       </div>
 
