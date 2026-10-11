@@ -83,7 +83,8 @@ STRESS_ASSESSMENT_QUESTIONS = [
 def score_assessment_questionnaire(answers: List[int]) -> Dict[str, Any]:
     """
     Scores the 6-item assessment questionnaire (Max 24 points).
-    Returns normalized Stress Level Index %, Severity Band, and recommendations.
+    Returns normalized Stress Level Index %, Severity Band, recommendations,
+    and a downloadable wellness action plan text.
     """
     total_score = sum(answers[:6]) if answers else 6
     max_score = 24
@@ -92,41 +93,112 @@ def score_assessment_questionnaire(answers: List[int]) -> Dict[str, Any]:
     if stress_pct <= 25.0:
         band = "Green"
         level_title = "Optimal / Low Stress"
-        summary = "Your stress indicators are in a healthy, manageable range! You maintain great balance."
+        summary = "Your stress indicators are in a healthy, manageable range! You maintain great psychological balance."
         rec_actions = [
-            "Maintain your current study-rest balance and hydration.",
-            "Keep up regular physical activity and sleep schedules.",
-            "Continue logging daily journals to stay mindful."
+            "Maintain your current study-rest balance and stay hydrated with 8 glasses of water.",
+            "Keep up regular physical activity and a consistent 7-8 hour sleep schedule.",
+            "Continue logging daily reflections in your private self-journal to stay mindful.",
+            "Take scheduled 5-minute movement breaks between deep work sessions."
         ]
+        recommended_movie = {
+            "title": "The Secret Life of Walter Mitty",
+            "genre": "Uplifting / Adventure",
+            "note": "A visually inspiring film celebrating curiosity, courage, and real-world connection."
+        }
+        recommended_youtube = {
+            "title": "☕ Lofi Hip Hop Radio - Beats to Relax/Study to",
+            "url": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+            "category": "Focus & Flow"
+        }
     elif stress_pct <= 55.0:
         band = "Amber"
         level_title = "Moderate Academic Strain"
-        summary = "Moderate stress and fatigue detected. Early intervention will prevent burnout."
+        summary = "Moderate academic stress and cognitive fatigue detected. Early intervention will prevent cumulative burnout."
         rec_actions = [
-            "Reduce daily continuous study sessions by 30% and schedule 15-minute breaks.",
-            "Practice 4-7-8 breathing exercises before starting study blocks.",
-            "Listen to soothing Lofi beats or ambient rain audio during study breaks.",
-            "Aim for 7.5 hours of consistent sleep tonight."
+            "Reduce daily continuous study sessions by 30% and schedule mandatory 15-minute screen-free breaks.",
+            "Practice the 4-7-8 breathing exercise before starting study blocks (Inhale 4s, Hold 7s, Exhale 8s).",
+            "Drink cool water immediately when noticing physical tension or racing thoughts.",
+            "Listen to soothing ambient rain audio or acoustic piano during evening study cooldown.",
+            "Aim for at least 7.5 hours of consistent sleep tonight."
         ]
+        recommended_movie = {
+            "title": "Spirited Away (Studio Ghibli)",
+            "genre": "Animation / Cozy",
+            "note": "A tranquil, visually enchanting masterpiece with peaceful soundscapes to ground an overworked mind."
+        }
+        recommended_youtube = {
+            "title": "🌧️ 10-Minute Deep Relaxation Mindfulness Meditation",
+            "url": "https://www.youtube.com/watch?v=ZToicYcHIOU",
+            "category": "Guided Meditation"
+        }
     elif stress_pct <= 80.0:
         band = "Red"
         level_title = "High Stress & Emotional Exhaustion"
-        summary = "High stress levels detected. Your mind and body require immediate rest and self-care."
+        summary = "High stress levels detected. Your nervous system requires immediate rest, somatic grounding, and self-care."
         rec_actions = [
-            "Pause heavy exam prep for today; engage in light review only.",
-            "Engage in 5-4-3-2-1 sensory grounding and drink fresh cool water.",
-            "Watch an uplifting feel-good movie or listen to guided relaxation.",
+            "Pause intensive technical prep for today; engage only in gentle review or restorative rest.",
+            "Engage in 5-4-3-2-1 sensory grounding and drink fresh cool water immediately.",
+            "Practice Progressive Muscle Relaxation to release shoulder, neck, and jaw tension.",
+            "Watch a warm, comforting movie to let your mind disengage from performance pressure.",
             "Consider speaking with a campus counselor or trusted mentor."
         ]
+        recommended_movie = {
+            "title": "Soul (Disney / Pixar)",
+            "genre": "Animation / Philosophy",
+            "note": "A heartwarming reminder that your intrinsic human worth is not defined by external achievement."
+        }
+        recommended_youtube = {
+            "title": "🌲 Soft Forest Rain & Thunder Ambient Sleep Sounds",
+            "url": "https://www.youtube.com/watch?v=lE6RYpe9XA0",
+            "category": "Deep Sleep & Relaxation"
+        }
     else:
         band = "Red"
         level_title = "Critical Distress / Burnout Risk"
-        summary = "Critical stress levels flagged. Please prioritize immediate emotional support and crisis care."
+        summary = "Critical stress levels flagged. Please prioritize immediate emotional safety and clinical support."
         rec_actions = [
             "Immediately halt all study work and connect with support.",
+            "Drink water, wrap in comfortable warmth, and reach out to someone you trust.",
             "Reach out to Tele-MANAS (14416) or KIRAN helpline (1800-599-0019) for 24/7 confidential care.",
             "Notify campus counselor for emergency academic workload adjustment."
         ]
+        recommended_movie = {
+            "title": "Good Will Hunting",
+            "genre": "Drama / Mentorship",
+            "note": "An empathetic story illustrating that seeking guidance and emotional support is true strength."
+        }
+        recommended_youtube = {
+            "title": "🎵 Piano Comfort - Soothing Acoustic Melody for Stress Relief",
+            "url": "https://www.youtube.com/watch?v=1ZYbU82GVz4",
+            "category": "Peaceful Soundscape"
+        }
+
+    # Format Downloadable Wellness Plan
+    plan_text = (
+        f"===========================================================\n"
+        f"  COURSECONNECT HEALTHTECH - PERSONALIZED WELLNESS PLAN\n"
+        f"===========================================================\n"
+        f"Stress Index Score: {stress_pct}% ({total_score}/{max_score} pts)\n"
+        f"Safety Band: {band} [{level_title}]\n\n"
+        f"CLINICAL SUMMARY:\n"
+        f"{summary}\n\n"
+        f"RECOMMENDED DAILY ACTION PLAN:\n"
+        + "".join([f"  [•] {act}\n" for act in rec_actions]) +
+        f"\nRECOMMENDED RELIEF SUGGESTIONS:\n"
+        f"  [Movie] {recommended_movie['title']} ({recommended_movie['genre']})\n"
+        f"          Note: {recommended_movie['note']}\n"
+        f"  [Audio] {recommended_youtube['title']} ({recommended_youtube['url']})\n\n"
+        f"DAILY WELLNESS HABITS:\n"
+        f"  1. Hydration: 8 full glasses of fresh cool water.\n"
+        f"  2. Breathing: 4-7-8 breathing reset (3 rounds daily).\n"
+        f"  3. Movement: 5-minute walking break every 25 minutes of study.\n"
+        f"  4. Evening Curfew: Screens off 30 minutes before sleep.\n\n"
+        f"EMERGENCY 24/7 CRISIS HELPLINES (Confidential & Free):\n"
+        f"  - Tele-MANAS: 14416 (India 24/7)\n"
+        f"  - KIRAN Helpline: 1800-599-0019\n"
+        f"  - Suicide & Crisis Lifeline: 988\n"
+        f"===========================================================\n"
+    )
 
     return {
         "raw_score": total_score,
@@ -135,7 +207,10 @@ def score_assessment_questionnaire(answers: List[int]) -> Dict[str, Any]:
         "band": band,
         "level_title": level_title,
         "summary": summary,
-        "recommended_actions": rec_actions
+        "recommended_actions": rec_actions,
+        "recommended_movie": recommended_movie,
+        "recommended_youtube": recommended_youtube,
+        "downloadable_plan": plan_text
     }
 
 def score_phq9(responses: List[int]) -> Dict[str, Any]:

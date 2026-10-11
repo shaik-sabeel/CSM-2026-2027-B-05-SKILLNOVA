@@ -24,6 +24,7 @@ from models.repo_interviewer import analyze_github_repo
 from models.burnout_predictor import predict_burnout_risk
 from models.job_pulse import analyze_job_market_pulse
 from models.mental_guru import get_mental_guru_advice
+from models.stress_dashboard import generate_stress_dashboard
 
 app = FastAPI(
     title="CourseConnect AI Service",
@@ -157,13 +158,21 @@ def get_wellbeing_schema():
 
 @app.post("/ai/wellbeing/analyze")
 def analyze_wellbeing(req: WellbeingReq):
-    return calculate_wellbeing_index(
+    result = calculate_wellbeing_index(
         assessment_answers=req.assessment_answers,
         phq9_scores=req.phq9_scores,
         gad7_scores=req.gad7_scores,
         mood_rating=req.mood_rating,
         journal_text=req.journal_text
     )
+    # Attach chart-ready dashboard data
+    result["dashboard"] = generate_stress_dashboard(
+        wbi_score=result["wbi_score"],
+        band=result["band"],
+        assessment_answers=req.assessment_answers or [1, 1, 1, 1, 1, 1],
+        journal_nlp=result["breakdown"].get("journal_nlp"),
+    )
+    return result
 
 @app.post("/ai/mental-guru/chat")
 def mental_guru_chat(req: MentalGuruReq):

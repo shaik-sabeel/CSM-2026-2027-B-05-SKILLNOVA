@@ -209,53 +209,57 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
           </div>
         </div>
 
-        {/* Mental Health Trend Chart (Recharts) */}
-        <div className="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4 flex flex-col justify-between">
+        {/* Mental Health Trend Chart & Calm Sanctuary Gateway */}
+        <div className="bg-gradient-to-br from-slate-800/90 via-[#072421]/60 to-slate-800/90 border border-teal-500/40 rounded-2xl p-6 shadow-xl space-y-4 flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <HeartPulse className="h-5 w-5 text-emerald-400 animate-pulse" />
-                <h2 className="text-lg font-bold text-slate-100">Mental Wellbeing Trend</h2>
+                <HeartPulse className="h-5 w-5 text-teal-400 animate-pulse" />
+                <h2 className="text-lg font-bold text-slate-100">Mental Wellbeing Sanctuary</h2>
               </div>
               <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
                 wbiBand === 'Red' ? 'bg-red-500/20 text-red-400 border-red-500/40' :
                 wbiBand === 'Amber' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' :
-                'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
               }`}>
-                {wbiBand} Safety Band
+                {wbiBand} Safety Band · {wbiScore || 24}% WBI
               </span>
             </div>
 
-            <div className="h-44 w-full pt-2">
+            <div className="h-40 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dashboardData.assessmentHistory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} />
                   <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 100]} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.75rem', fontSize: '11px' }} 
                   />
-                  <Line type="monotone" dataKey="wbi" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="wbi" name="Stress Index" stroke="#14b8a6" strokeWidth={2.5} dot={{ r: 4, fill: '#14b8a6' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
 
-            <p className="text-xs text-slate-300 mt-2 bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 leading-relaxed">
+            <p className="text-xs text-slate-300 mt-2 bg-slate-900/80 p-3 rounded-xl border border-teal-500/20 leading-relaxed">
               {wbiBand === 'Amber' 
                 ? "Moderate stress detected. Your weekly study load has been automatically reduced by 30% and a rest day scheduled."
                 : wbiBand === 'Red'
                 ? "High strain detected. Intensive roadmap tasks are paused. Reach out to student counselling support."
-                : "Your wellbeing indicators are stable. Keep up your balanced routine!"}
+                : "Your wellbeing indicators are stable. Take the 6-question clinical assessment to keep track!"}
             </p>
           </div>
 
-          <button 
-            onClick={() => setActiveTab('wellbeing')}
-            className="w-full bg-slate-700 hover:bg-slate-600 text-sky-400 border border-sky-500/30 text-xs font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 mt-2"
-          >
-            <span>Complete Daily Assessment & Journal Check-In</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
+          <div className="space-y-2 pt-1">
+            <button 
+              onClick={() => setActiveTab('wellbeing')}
+              className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold text-xs py-3 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg"
+            >
+              <span>🌿 Open Calm Sanctuary (Assessment, Guru & Relief)</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
       </div>

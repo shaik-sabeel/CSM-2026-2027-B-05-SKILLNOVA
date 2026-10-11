@@ -65,7 +65,9 @@ export default function Navbar({
                   onClick={() => setActiveTab(item.id)}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                     isActive 
-                      ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm' 
+                      ? (item.id === 'wellbeing'
+                          ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
+                          : 'bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm')
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/40'
                   }`}
                 >
