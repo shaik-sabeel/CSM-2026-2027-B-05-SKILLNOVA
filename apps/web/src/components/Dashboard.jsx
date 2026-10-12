@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Award, HeartPulse, BookOpen, Brain, Video, FileText, 
-  ArrowRight, Zap, LogIn, UserCheck, RefreshCw, CheckCircle2 
+  ArrowRight, Zap, LogIn, UserCheck, RefreshCw, CheckCircle2, Flame 
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import api from '../services/api';
@@ -365,7 +365,7 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
         <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
           Student Career Tools
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           
           <div 
             onClick={() => setActiveTab('roadmap')}
@@ -390,10 +390,10 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
               <Brain className="h-5 w-5" />
             </div>
             <h4 className="text-sm font-bold text-white group-hover:text-indigo-400 transition">
-              Hugging Face RAG Tutor
+              Production RAG AI Tutor
             </h4>
             <p className="text-xs text-slate-400">
-              Ask questions grounded in verified course materials with source citations.
+              Vector search across verified CS, DSA, and System Design knowledge.
             </p>
           </div>
 
@@ -405,10 +405,25 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
               <Video className="h-5 w-5" />
             </div>
             <h4 className="text-sm font-bold text-white group-hover:text-emerald-400 transition">
-              AI Mock Interview
+              30-Min AI Mock Interview
             </h4>
             <p className="text-xs text-slate-400">
-              Simulate role interviews or paste GitHub repo for codebase-aware questions.
+              Live webcam/mic simulation tailored to your Resume and target JD.
+            </p>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('focus')}
+            className="bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl p-4 cursor-pointer transition hover:border-amber-500/50 group space-y-2 shadow-md"
+          >
+            <div className="h-10 w-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
+              <Flame className="h-5 w-5" />
+            </div>
+            <h4 className="text-sm font-bold text-white group-hover:text-amber-400 transition">
+              Focus Dojo (Kaizen)
+            </h4>
+            <p className="text-xs text-slate-400">
+              Japanese Pomodoro with AI head-turn tracking & distraction buzzer alarm.
             </p>
           </div>
 
@@ -423,7 +438,7 @@ export default function Dashboard({ setActiveTab, wbiBand, wbiScore, user, onOpe
               ATS Resume Analyzer
             </h4>
             <p className="text-xs text-slate-400">
-              Scan resume against Job Description, extract missing skills & action verbs.
+              Scan resume against JD, extract missing skills & action verbs.
             </p>
           </div>
 

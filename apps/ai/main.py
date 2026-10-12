@@ -14,7 +14,11 @@ from models.roadmap_generator import generate_fallback_roadmap
 from models.resource_engine import resolve_resources_for_queries
 from models.rag_tutor import generate_tutor_response
 from models.resume_analyzer import analyze_resume
-from models.interview_engine import generate_interview_questions, evaluate_interview_response
+from models.interview_engine import (
+    generate_tailored_interview_flow, 
+    evaluate_interview_response_rag, 
+    analyze_resume_and_jd
+)
 from models.wellbeing_analyzer import calculate_wellbeing_index, STRESS_ASSESSMENT_QUESTIONS, score_assessment_questionnaire
 from models.safety_layer import check_crisis_safety_ensemble
 from models.adaptive_planner import adapt_roadmap_for_wellbeing
@@ -61,13 +65,17 @@ class ResumeReq(BaseModel):
     target_jd: Optional[str] = ""
 
 class InterviewGenReq(BaseModel):
-    role: str
+    role: str = "Software Engineer"
     round_type: str = "technical"
+    resume_text: Optional[str] = ""
+    target_jd: Optional[str] = ""
 
 class InterviewEvalReq(BaseModel):
     question: str
     answer_text: str
     duration_sec: int = 45
+    role: Optional[str] = "Software Engineer"
+    target_jd: Optional[str] = ""
 
 class WellbeingReq(BaseModel):
     assessment_answers: Optional[List[int]] = None
@@ -142,11 +150,22 @@ def run_resume_analysis(req: ResumeReq):
 
 @app.post("/ai/interview/questions")
 def get_interview_questions(req: InterviewGenReq):
-    return {"questions": generate_interview_questions(req.role, req.round_type)}
+    analysis = analyze_resume_and_jd(req.resume_text or "", req.target_jd or "")
+    flow = generate_tailored_interview_flow(req.resume_text or "", req.target_jd or "", req.role)
+    return {
+        "analysis": analysis,
+        "questions": flow
+    }
 
 @app.post("/ai/interview/evaluate")
 def evaluate_interview(req: InterviewEvalReq):
-    return evaluate_interview_response(req.question, req.answer_text, req.duration_sec)
+    return evaluate_interview_response_rag(
+        question=req.question, 
+        answer_text=req.answer_text, 
+        duration_sec=req.duration_sec,
+        role=req.role or "Software Engineer",
+        target_jd=req.target_jd or ""
+    )
 
 @app.post("/ai/quiz/generate")
 def create_quiz(req: QuizGenReq):

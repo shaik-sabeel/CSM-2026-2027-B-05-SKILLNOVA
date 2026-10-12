@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { LogIn, UserPlus, Lock, Mail, User, ShieldCheck, X } from 'lucide-react';
 import api from '../services/api';
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  const [isRegister, setIsRegister] = useState(false);
+export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login' }) {
+  const [isRegister, setIsRegister] = useState(initialMode === 'register');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('student@college.edu');
   const [password, setPassword] = useState('student123');
@@ -11,6 +11,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [targetRole, setTargetRole] = useState('Software Engineer');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    setIsRegister(initialMode === 'register');
+    setError('');
+  }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
